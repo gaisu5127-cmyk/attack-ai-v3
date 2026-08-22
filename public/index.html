@@ -20,24 +20,21 @@
 </head>
 <body class="bg-[#121110] text-[#E1DED7] h-screen flex overflow-hidden antialiased">
 
-    <!-- หน้าต่างเข้าสู่ระบบบังคับ (Fullscreen Login Wall) -->
+    <!-- หน้าต่างเข้าสู่ระบบบังคับ (Fullscreen Login Screen) -->
     <div id="loginScreen" class="fixed inset-0 bg-[#000000] z-50 flex items-center justify-center p-4">
         <div class="bg-[#181716] border border-[#2A2826] p-8 rounded-3xl max-w-sm w-full space-y-6 shadow-2xl text-center">
-            <!-- โลโก้ตามภาพที่แนบ -->
             <div class="flex justify-center">
-                <svg class="w-20 h-20 text-white" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-20 h-20 text-white" viewBox="0 0 200 200" fill="none">
                     <path d="M100 30L165 150L135 150L100 80L65 150L35 150L100 30Z" fill="white"/>
                     <path d="M100 80L120 120L100 100L80 120L100 80Z" fill="#181716"/>
                     <path d="M45 80L25 95L45 110" stroke="#38BDF8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M155 80L175 95L155 110" stroke="#38BDF8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
-
             <div>
                 <h2 class="text-2xl font-bold text-white tracking-wider">ATTACK AI</h2>
                 <p class="text-xs text-[#737068] mt-1">กรุณาล็อกอินเพื่อเริ่มใช้งานระบบ</p>
             </div>
-
             <form onsubmit="handleLogin(event)" class="space-y-4 text-left">
                 <div>
                     <label class="text-xs text-[#9E9B93]">Username</label>
@@ -52,13 +49,49 @@
         </div>
     </div>
 
-    <!-- Overlay สำหรับมือถือเวลาเปิด Sidebar -->
+    <!-- Modal ตั้งค่าโปรไฟล์และบัญชี (Profile Settings Modal) -->
+    <div id="profileModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#181716] border border-[#2A2826] p-6 rounded-3xl max-w-sm w-full space-y-5 shadow-2xl text-left">
+            <div class="flex justify-between items-center border-b border-[#2A2826] pb-3">
+                <h3 class="text-lg font-bold text-white">ตั้งค่าโปรไฟล์ & บัญชี</h3>
+                <button onclick="toggleProfileModal()" class="text-[#737068] hover:text-white">✕</button>
+            </div>
+            
+            <div class="flex flex-col items-center gap-3">
+                <div class="relative group cursor-pointer" onclick="document.getElementById('avatarInput').click()">
+                    <div id="profileModalAvatar" class="w-20 h-20 rounded-full bg-[#262422] border-2 border-[#38BDF8] flex items-center justify-center font-bold text-white text-2xl overflow-hidden bg-cover bg-center">
+                        U
+                    </div>
+                    <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs text-white">
+                        เปลี่ยนรูป
+                    </div>
+                </div>
+                <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="previewAvatar(event)">
+                <span class="text-xs text-[#737068]">คลิกเพื่อเปลี่ยนรูปโปรไฟล์</span>
+            </div>
+
+            <form onsubmit="saveProfile(event)" class="space-y-4">
+                <div>
+                    <label class="text-xs text-[#9E9B93]">ชื่อผู้ใช้ (Display Name)</label>
+                    <input type="text" id="editUserName" required class="w-full bg-[#121110] border border-[#33302D] p-2.5 rounded-xl text-sm text-white outline-none mt-1 focus:border-[#38BDF8] transition">
+                </div>
+                <div>
+                    <label class="text-xs text-[#9E9B93]">เปลี่ยนรหัสผ่านใหม่ (ไม่เปลี่ยนให้เว้นว่าง)</label>
+                    <input type="password" id="editUserPass" placeholder="รหัสผ่านใหม่" class="w-full bg-[#121110] border border-[#33302D] p-2.5 rounded-xl text-sm text-white outline-none mt-1 focus:border-[#38BDF8] transition">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="flex-1 py-2.5 bg-[#38BDF8] text-black font-bold text-sm rounded-xl hover:opacity-90 transition">บันทึกข้อมูล</button>
+                    <button type="button" onclick="toggleProfileModal()" class="px-4 py-2.5 bg-[#262422] text-[#C2BFB7] text-sm rounded-xl hover:text-white transition">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar & Main UI -->
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-20 hidden md:hidden"></div>
 
-    <!-- Sidebar -->
     <aside id="sidebar" class="w-72 bg-[#181716] border-r border-[#2A2826] flex flex-col justify-between transition-transform duration-300 z-30 fixed md:relative h-full -translate-x-full md:translate-x-0">
         <div class="p-5 space-y-6 overflow-y-auto no-scrollbar flex-1">
-            <!-- Header Logo -->
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <svg class="w-7 h-7 text-white" viewBox="0 0 200 200" fill="none">
@@ -71,15 +104,10 @@
                 <button onclick="toggleSidebar()" class="md:hidden text-[#9E9B93] hover:text-white">✕</button>
             </div>
 
-            <!-- Menu Links -->
             <nav class="space-y-3 font-medium text-sm text-[#C2BFB7]">
                 <a href="#" class="flex items-center gap-3 py-1.5 hover:text-white transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                     Chats
-                </a>
-                <a href="#" class="flex items-center gap-3 py-1.5 hover:text-white transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9 6 9-6M3 7l9-6 9 6"/></svg>
-                    Projects
                 </a>
                 <a href="#" class="flex items-center gap-3 py-1.5 hover:text-white transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
@@ -87,12 +115,9 @@
                 </a>
             </nav>
 
-            <!-- Recents -->
             <div class="space-y-2 pt-2">
                 <p class="text-xs font-semibold text-[#737068]">Recents</p>
-                <div id="chatHistoryList" class="space-y-1">
-                    <!-- ประวัติแชต -->
-                </div>
+                <div id="chatHistoryList" class="space-y-1"></div>
             </div>
         </div>
 
@@ -101,20 +126,17 @@
             <button onclick="createNewChat()" class="w-full py-2.5 bg-[#262422] hover:bg-[#302D2A] text-[#ECE9E3] font-medium text-sm rounded-full border border-[#383532] flex items-center justify-center gap-2 transition shadow-lg">
                 <span class="text-base font-light">+</span> New chat
             </button>
-
             <div id="userInfo" class="flex items-center justify-between pt-1">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-full bg-white flex items-center justify-center font-bold text-black text-xs" id="userAvatar">U</div>
-                    <span class="text-xs font-medium text-[#ECE9E3]" id="userName">User_Guest</span>
+                <div onclick="toggleProfileModal()" class="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition">
+                    <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center font-bold text-black text-xs overflow-hidden bg-cover bg-center border border-[#38BDF8]" id="userAvatar">U</div>
+                    <span class="text-xs font-medium text-[#ECE9E3] truncate max-w-[100px]" id="userName">User</span>
                 </div>
                 <button onclick="logout()" class="text-xs text-[#737068] hover:text-white">Logout</button>
             </div>
         </div>
     </aside>
 
-    <!-- Main Content Area -->
     <div class="flex-1 flex flex-col h-full relative">
-        <!-- Top Navbar -->
         <header class="px-5 py-3 border-b border-[#2A2826] flex justify-between items-center bg-[#121110]">
             <button onclick="toggleSidebar()" class="text-[#9E9B93] hover:text-white md:hidden">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -126,10 +148,8 @@
             </div>
         </header>
 
-        <!-- Chat Box Output -->
         <main id="chatBox" class="flex-1 px-4 overflow-y-auto no-scrollbar flex flex-col justify-center max-w-xl mx-auto w-full space-y-6 my-auto">
             <div id="welcomeScreen" class="text-center space-y-4 py-10 my-auto">
-                <!-- โลโก้หลักตรงกลางหน้า -->
                 <div class="flex justify-center">
                     <svg class="w-16 h-16 text-white" viewBox="0 0 200 200" fill="none">
                         <path d="M100 30L165 150L135 150L100 80L65 150L35 150L100 30Z" fill="white"/>
@@ -143,7 +163,6 @@
             </div>
         </main>
 
-        <!-- Footer Input Area -->
         <footer class="p-4 bg-[#121110] max-w-xl mx-auto w-full space-y-3">
             <div class="bg-[#1C1B1A] border border-[#2A2826] rounded-2xl p-2.5 shadow-2xl space-y-2">
                 <form id="chatForm" class="flex items-center gap-2">
@@ -151,20 +170,16 @@
                     <button type="button" onclick="document.getElementById('imageInput').click()" class="w-9 h-9 flex items-center justify-center bg-[#262422] hover:bg-[#302D2A] text-[#E1DED7] rounded-full transition text-lg font-light">
                         +
                     </button>
-
                     <div class="relative flex-1">
                         <select id="mode" class="w-full appearance-none bg-[#262422] text-[#E1DED7] text-xs font-medium px-3 py-2 rounded-full border border-[#33302D] outline-none cursor-pointer pr-6">
-                            <option value="normal">ATTACK AI Mode</option>
+                            <option value="normal">ATTACK AI Fast</option>
                             <option value="expert">Senior Dev Mode</option>
-                            <option value="dumb">Raw Mode</option>
                         </select>
                     </div>
-
                     <button type="submit" class="w-9 h-9 flex items-center justify-center bg-[#ECE9E3] text-[#121110] hover:opacity-90 rounded-full transition">
                         ↑
                     </button>
                 </form>
-
                 <div class="px-1 pt-1">
                     <input type="text" id="userInput" placeholder="Chat with ATTACK AI..." class="w-full bg-transparent text-sm text-[#ECE9E3] outline-none placeholder-[#737068]">
                 </div>
@@ -175,33 +190,91 @@
     <script>
         let chatHistory = JSON.parse(localStorage.getItem('attack_ai_history') || '[]');
         let currentChatId = Date.now();
+        let lastUserMessage = '';
+        let userAvatarData = localStorage.getItem('attack_ai_avatar') || '';
 
         marked.setOptions({
             highlight: function(code) { return hljs.highlightAuto(code).value; }
         });
+
+        // ตรวจสอบล็อกอินและข้อมูลโปรไฟล์ตอนเปิดเว็บ
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem('attack_ai_user');
+            if (savedUser) {
+                setUserData(savedUser, userAvatarData);
+                document.getElementById('loginScreen').style.display = 'none';
+            }
+        });
+
+        function setUserData(username, avatar) {
+            document.getElementById('userName').innerText = username;
+            document.getElementById('editUserName').value = username;
+            document.getElementById('welcomeText').innerText = `Welcome, ${username}`;
+            
+            const avatarEl = document.getElementById('userAvatar');
+            const modalAvatarEl = document.getElementById('profileModalAvatar');
+
+            if (avatar) {
+                avatarEl.style.backgroundImage = `url(${avatar})`;
+                avatarEl.innerText = '';
+                modalAvatarEl.style.backgroundImage = `url(${avatar})`;
+                modalAvatarEl.innerText = '';
+            } else {
+                avatarEl.style.backgroundImage = 'none';
+                avatarEl.innerText = username[0].toUpperCase();
+                modalAvatarEl.style.backgroundImage = 'none';
+                modalAvatarEl.innerText = username[0].toUpperCase();
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUser').value;
+            localStorage.setItem('attack_ai_user', username);
+            setUserData(username, userAvatarData);
+            document.getElementById('loginScreen').style.display = 'none';
+        }
+
+        function logout() {
+            localStorage.removeItem('attack_ai_user');
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
+        }
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
             document.getElementById('sidebarOverlay').classList.toggle('hidden');
         }
 
-        // ระบบล็อกอินบังคับ
-        function handleLogin(e) {
-            e.preventDefault();
-            const username = document.getElementById('loginUser').value;
-            
-            document.getElementById('userName').innerText = username;
-            document.getElementById('userAvatar').innerText = username[0].toUpperCase();
-            document.getElementById('welcomeText').innerText = `Welcome, ${username}`;
-            
-            // ปิดหน้าจอ Login
-            document.getElementById('loginScreen').style.display = 'none';
+        function toggleProfileModal() {
+            const modal = document.getElementById('profileModal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
         }
 
-        function logout() {
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('loginUser').value = '';
-            document.getElementById('loginPass').value = '';
+        function previewAvatar(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    userAvatarData = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveProfile(e) {
+            e.preventDefault();
+            const newName = document.getElementById('editUserName').value;
+            if (newName) {
+                localStorage.setItem('attack_ai_user', newName);
+                if (userAvatarData) {
+                    localStorage.setItem('attack_ai_avatar', userAvatarData);
+                }
+                setUserData(newName, userAvatarData);
+                toggleProfileModal();
+            }
         }
 
         function createNewChat() {
@@ -224,20 +297,48 @@
             renderHistoryUI();
         }
 
-        function addCopyButtons() {
-            document.querySelectorAll('pre').forEach((pre) => {
-                if (pre.querySelector('.copy-btn')) return;
-                const btn = document.createElement('button');
-                btn.className = 'copy-btn';
-                btn.innerText = 'Copy Code';
-                btn.onclick = () => {
-                    const code = pre.querySelector('code')?.innerText || pre.innerText;
-                    navigator.clipboard.writeText(code);
-                    btn.innerText = 'Copied!';
-                    setTimeout(() => btn.innerText = 'Copy Code', 2000);
-                };
-                pre.appendChild(btn);
-            });
+        function createActionToolbar(textToCopy) {
+            return `
+            <div class="flex items-center gap-3 pt-3 text-[#8E8B82]">
+                <button onclick="copyToClipboard('${encodeURIComponent(textToCopy)}')" title="Copy" class="hover:text-white transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                </button>
+                <button onclick="shareResponse()" title="Share" class="hover:text-white transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                </button>
+                <button onclick="speakText('${encodeURIComponent(textToCopy)}')" title="Read aloud" class="hover:text-white transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </button>
+                <button onclick="this.classList.toggle('text-white')" title="Good response" class="hover:text-white transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 11H4a2 2 0 00-2 2v6a2 2 0 002 2h3"/></svg>
+                </button>
+                <button onclick="this.classList.toggle('text-white')" title="Bad response" class="hover:text-white transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v5a2 2 0 022 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-9h3a2 2 0 012 2v6a2 2 0 01-2 2h-3"/></svg>
+                </button>
+                <button onclick="retryLastMessage()" title="Retry response" class="hover:text-white transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </button>
+            </div>`;
+        }
+
+        function copyToClipboard(encodedText) {
+            navigator.clipboard.writeText(decodeURIComponent(encodedText));
+        }
+
+        function speakText(encodedText) {
+            const utterance = new SpeechSynthesisUtterance(decodeURIComponent(encodedText));
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function shareResponse() {
+            if (navigator.share) navigator.share({ title: 'ATTACK AI Response', text: 'Check out this answer from ATTACK AI' });
+        }
+
+        function retryLastMessage() {
+            if (lastUserMessage) {
+                document.getElementById('userInput').value = lastUserMessage;
+                document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+            }
         }
 
         function saveHistory(firstUserMsg) {
@@ -275,6 +376,7 @@
             }
 
             const userText = input.value;
+            lastUserMessage = userText;
             saveHistory(userText || 'Image Attachment');
 
             const userDiv = document.createElement('div');
@@ -295,10 +397,24 @@
 
             input.value = ''; fileInput.value = '';
 
-            const aiDiv = document.createElement('div');
-            aiDiv.className = 'mr-auto text-[#ECE9E3] p-2 max-w-[90%] text-sm prose prose-invert';
-            aiDiv.innerHTML = '<span class="text-[#737068] animate-pulse">Thinking...</span>';
-            chatBox.appendChild(aiDiv);
+            const aiContainer = document.createElement('div');
+            aiContainer.className = 'mr-auto text-[#ECE9E3] p-2 max-w-[90%] text-sm space-y-2';
+            
+            const aiTextDiv = document.createElement('div');
+            aiTextDiv.className = 'prose prose-invert flex items-center gap-2';
+            
+            // วงกลมโหลดสีฟ้าหมุนแสดงสถานะกำลังตอบ
+            aiTextDiv.innerHTML = `
+                <div class="flex items-center gap-2 text-[#38BDF8]">
+                    <svg class="animate-spin h-5 w-5 text-[#38BDF8]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-xs text-[#737068]">ATTACK AI กำลังคิด...</span>
+                </div>`;
+            
+            aiContainer.appendChild(aiTextDiv);
+            chatBox.appendChild(aiContainer);
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
@@ -310,14 +426,14 @@
                 const data = await res.json();
                 
                 if (data.success) {
-                    aiDiv.innerHTML = marked.parse(data.reply);
+                    aiTextDiv.innerHTML = marked.parse(data.reply);
+                    aiContainer.innerHTML += createActionToolbar(data.reply);
                     hljs.highlightAll();
-                    addCopyButtons();
                 } else {
-                    aiDiv.innerText = "Error: " + data.error;
+                    aiTextDiv.innerText = "Error: " + data.error;
                 }
             } catch (err) {
-                aiDiv.innerText = "Connection Error";
+                aiTextDiv.innerText = "Connection Error";
             }
             chatBox.scrollTop = chatBox.scrollHeight;
         });
