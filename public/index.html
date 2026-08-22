@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ATTACK AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-serif-claude { font-family: 'Instrument Serif', serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-[#121110] text-[#E1DED7] min-h-screen flex flex-col justify-between antialiased selection:bg-[#363430]">
+
+    <header class="px-5 py-4 flex justify-between items-center bg-[#121110]">
+        <button class="text-[#9E9B93] hover:text-white p-1">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="text-[#9E9B93]">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+                <circle cx="9" cy="10" r="1.2"/>
+                <circle cx="15" cy="10" r="1.2"/>
+                <path d="M12 15c-1.5 0-2.5-.8-2.5-.8a.75.75 0 0 1 .8-1.2s.7.5 1.7.5 1.7-.5 1.7-.5a.75.75 0 1 1 .8 1.2s-1 .8-2.5 .8z"/>
+            </svg>
+        </div>
+    </header>
+
+    <main id="chatBox" class="flex-1 px-5 overflow-y-auto no-scrollbar flex flex-col justify-center max-w-xl mx-auto w-full space-y-6 my-auto">
+        <div id="welcomeScreen" class="text-center space-y-3 py-10 my-auto">
+            <div class="inline-block text-[#D97757]">
+                <svg class="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L13.8 8.2L20 10L13.8 11.8L12 18L10.2 11.8L4 10L10.2 8.2L12 2Z"/>
+                </svg>
+            </div>
+            <h2 class="text-3xl font-serif-claude tracking-wide text-[#ECE9E3]">
+                attack ai returns!
+            </h2>
+        </div>
+    </main>
+
+    <footer class="p-4 bg-[#121110] max-w-xl mx-auto w-full space-y-3">
+        <div class="bg-[#1C1B1A] border border-[#2A2826] rounded-2xl p-4 text-center space-y-3 shadow-2xl">
+            <p class="text-xs font-medium text-[#9E9B93]">Get more with ATTACK AI Pro</p>
+            <button class="w-full py-2.5 bg-[#262422] hover:bg-[#302D2A] text-[#ECE9E3] font-medium text-xs rounded-xl border border-[#383532] transition">
+                Upgrade
+            </button>
+        </div>
+
+        <div class="bg-[#1C1B1A] border border-[#2A2826] rounded-2xl p-2.5 shadow-2xl space-y-2">
+            <form id="chatForm" class="flex items-center gap-2">
+                <input type="file" id="imageInput" accept="image/*" class="hidden">
+                <button type="button" onclick="document.getElementById('imageInput').click()" class="w-9 h-9 flex items-center justify-center bg-[#262422] hover:bg-[#302D2A] text-[#E1DED7] rounded-full transition text-lg font-light">
+                    +
+                </button>
+
+                <div class="relative flex-1">
+                    <select id="mode" class="w-full appearance-none bg-[#262422] text-[#E1DED7] text-xs font-medium px-3 py-2 rounded-full border border-[#33302D] outline-none cursor-pointer pr-6">
+                        <option value="normal">ATTACK 1.5 Medium</option>
+                        <option value="expert">ATTACK 1.5 Pro Expert</option>
+                        <option value="dumb">ATTACK 1.5 Dumb</option>
+                    </select>
+                </div>
+
+                <button type="button" class="w-9 h-9 flex items-center justify-center bg-[#262422] text-[#9E9B93] rounded-full">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                </button>
+
+                <button type="submit" class="w-9 h-9 flex items-center justify-center bg-[#ECE9E3] text-[#121110] hover:opacity-90 rounded-full transition">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 3v18M8 6v12M16 6v12M4 9v6M20 9v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </form>
+
+            <div class="px-1 pt-1">
+                <input type="text" id="userInput" placeholder="Chat with ATTACK AI..." class="w-full bg-transparent text-sm text-[#ECE9E3] outline-none placeholder-[#737068]">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const chatForm = document.getElementById('chatForm');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+
+        marked.setOptions({
+            highlight: function(code) { return hljs.highlightAuto(code).value; }
+        });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('userInput');
+            const fileInput = document.getElementById('imageInput');
+            const mode = document.getElementById('mode').value;
+
+            if (!input.value && !fileInput.files[0]) return;
+
+            if (welcomeScreen) {
+                welcomeScreen.style.display = 'none';
+                chatBox.classList.remove('justify-center', 'my-auto');
+            }
+
+            const userDiv = document.createElement('div');
+            userDiv.className = 'ml-auto bg-[#262422] text-[#ECE9E3] p-4 rounded-2xl max-w-[85%] text-sm leading-relaxed border border-[#33302D]';
+            userDiv.innerText = input.value || '[Image Sent]';
+            chatBox.appendChild(userDiv);
+
+            let imageBase64 = null;
+            let mimeType = null;
+
+            if (fileInput.files[0]) {
+                const file = fileInput.files[0];
+                mimeType = file.type;
+                imageBase64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            const messageText = input.value;
+            input.value = '';
+            fileInput.value = '';
+
+            const aiDiv = document.createElement('div');
+            aiDiv.className = 'mr-auto text-[#ECE9E3] p-2 max-w-[90%] text-sm leading-relaxed prose prose-invert';
+            aiDiv.innerHTML = '<span class="text-[#737068] animate-pulse">Thinking...</span>';
+            chatBox.appendChild(aiDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: messageText, mode, imageBase64, mimeType })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    aiDiv.innerHTML = marked.parse(data.reply);
+                    hljs.highlightAll();
+                } else {
+                    aiDiv.innerText = "Error: " + (data.error || "Failed to process request");
+                }
+            } catch (err) {
+                aiDiv.innerText = "Connection Error";
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    </script>
+</body>
+</html>
