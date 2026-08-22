@@ -204,6 +204,7 @@
                 setUserData(savedUser, userAvatarData);
                 document.getElementById('loginScreen').style.display = 'none';
             }
+            renderHistoryUI();
         });
 
         function setUserData(username, avatar) {
@@ -295,6 +296,40 @@
                     </h2>
                 </div>`;
             renderHistoryUI();
+            if (window.innerWidth < 768) toggleSidebar();
+        }
+
+        function loadChat(chatId) {
+            currentChatId = chatId;
+            const chat = chatHistory.find(c => c.id === chatId);
+            if (!chat) return;
+
+            const chatBox = document.getElementById('chatBox');
+            chatBox.classList.remove('justify-center', 'my-auto');
+            chatBox.innerHTML = '';
+
+            chat.messages.forEach(msg => {
+                if (msg.sender === 'user') {
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'ml-auto bg-[#262422] text-[#ECE9E3] p-4 rounded-2xl max-w-[85%] text-sm border border-[#33302D] shadow';
+                    userDiv.innerText = msg.text;
+                    chatBox.appendChild(userDiv);
+                } else {
+                    const aiContainer = document.createElement('div');
+                    aiContainer.className = 'mr-auto text-[#ECE9E3] p-2 max-w-[90%] text-sm space-y-2';
+                    const aiTextDiv = document.createElement('div');
+                    aiTextDiv.className = 'prose prose-invert';
+                    aiTextDiv.innerHTML = marked.parse(msg.text);
+                    aiContainer.appendChild(aiTextDiv);
+                    aiContainer.innerHTML += createActionToolbar(msg.text);
+                    chatBox.appendChild(aiContainer);
+                }
+            });
+
+            hljs.highlightAll();
+            chatBox.scrollTop = chatBox.scrollHeight;
+            renderHistoryUI();
+            if (window.innerWidth < 768) toggleSidebar();
         }
 
         function createActionToolbar(textToCopy) {
@@ -313,7 +348,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 11H4a2 2 0 00-2 2v6a2 2 0 002 2h3"/></svg>
                 </button>
                 <button onclick="this.classList.toggle('text-white')" title="Bad response" class="hover:text-white transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v5a2 2 0 022 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-9h3a2 2 0 012 2v6a2 2 0 01-2 2h-3"/></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v5a2 2 0 022 2h.095c.5 0 .905-.405.905-.905 0-.714-2.11 1.412-.608-2.006L17 13V4m-7 10h2m5-9h3a2 2 0 012 2v6a2 2 0 01-2 2h-3"/></svg>
                 </button>
                 <button onclick="retryLastMessage()" title="Retry response" class="hover:text-white transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -341,20 +376,25 @@
             }
         }
 
-        function saveHistory(firstUserMsg) {
+        function saveMessageToHistory(sender, text) {
             let chat = chatHistory.find(c => c.id === currentChatId);
             if (!chat) {
-                chat = { id: currentChatId, title: firstUserMsg.slice(0, 25) };
+                chat = { 
+                    id: currentChatId, 
+                    title: text.slice(0, 25) || 'New Chat',
+                    messages: []
+                };
                 chatHistory.unshift(chat);
-                localStorage.setItem('attack_ai_history', JSON.stringify(chatHistory));
             }
+            chat.messages.push({ sender, text });
+            localStorage.setItem('attack_ai_history', JSON.stringify(chatHistory));
             renderHistoryUI();
         }
 
         function renderHistoryUI() {
             const list = document.getElementById('chatHistoryList');
             list.innerHTML = chatHistory.map(c => `
-                <div onclick="loadChat(${c.id})" class="p-2 text-sm rounded-lg hover:bg-[#262422] cursor-pointer text-[#C2BFB7] hover:text-white truncate transition">
+                <div onclick="loadChat(${c.id})" class="p-2 text-sm rounded-lg hover:bg-[#262422] cursor-pointer ${c.id === currentChatId ? 'bg-[#262422] text-white font-medium' : 'text-[#C2BFB7]'} hover:text-white truncate transition">
                     ${c.title}
                 </div>
             `).join('');
@@ -377,7 +417,7 @@
 
             const userText = input.value;
             lastUserMessage = userText;
-            saveHistory(userText || 'Image Attachment');
+            saveMessageToHistory('user', userText || '[Image]');
 
             const userDiv = document.createElement('div');
             userDiv.className = 'ml-auto bg-[#262422] text-[#ECE9E3] p-4 rounded-2xl max-w-[85%] text-sm border border-[#33302D] shadow';
@@ -403,7 +443,6 @@
             const aiTextDiv = document.createElement('div');
             aiTextDiv.className = 'prose prose-invert flex items-center gap-2';
             
-            // วงกลมโหลดสีฟ้าหมุนแสดงสถานะกำลังตอบ
             aiTextDiv.innerHTML = `
                 <div class="flex items-center gap-2 text-[#38BDF8]">
                     <svg class="animate-spin h-5 w-5 text-[#38BDF8]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -428,6 +467,7 @@
                 if (data.success) {
                     aiTextDiv.innerHTML = marked.parse(data.reply);
                     aiContainer.innerHTML += createActionToolbar(data.reply);
+                    saveMessageToHistory('ai', data.reply);
                     hljs.highlightAll();
                 } else {
                     aiTextDiv.innerText = "Error: " + data.error;
