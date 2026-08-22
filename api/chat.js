@@ -19,8 +19,6 @@ module.exports = async (req, res) => {
         }
 
         const selectedMode = mode || 'normal';
-        
-        // เลือกใช้ gemini-1.5-pro เมื่อเป็นโหมด expert และใช้ gemini-1.5-flash สำหรับโหมดอื่น
         const selectedModel = selectedMode === 'expert' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
         
         const parts = [];
@@ -35,7 +33,6 @@ module.exports = async (req, res) => {
         }
         parts.push({ text: message || "ทักทายกูหน่อย" });
 
-        // แก้ไข endpoint เป็น gemini-1.5 เรียบร้อย
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
