@@ -11,7 +11,6 @@ module.exports = async (req, res) => {
         const { message, mode, imageBase64, mimeType } = req.body;
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // เช็กว่ามีการตั้งค่า GEMINI_API_KEY หรือยัง
         if (!apiKey) {
             return res.status(500).json({ 
                 success: false, 
@@ -32,8 +31,7 @@ module.exports = async (req, res) => {
         }
         parts.push({ text: message || "ทักทายกูหน่อย" });
 
-        // เรียกใช้โมเดล gemini-1.5-flash ผ่าน REST API โดยตรง
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -49,11 +47,11 @@ module.exports = async (req, res) => {
         if (!response.ok) {
             return res.status(response.status).json({ 
                 success: false, 
-                error: data.error?.message || 'API Key ไม่ถูกต้อง หรือมีปัญหาในการติดต่อกับ Google API' 
+                error: data.error?.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อกับ Gemini API' 
             });
         }
 
-        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่มีคำตอบตอบกลับมาจาก AI";
+        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่มีคำตอบจากระบบ";
         return res.status(200).json({ success: true, reply: replyText });
 
     } catch (error) {
