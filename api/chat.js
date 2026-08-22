@@ -1,62 +1,64 @@
-const PROMPTS = {
-    normal: "คุณคือ ATTACK AI โมเดล AI สายลุย ตอบได้ทุกเรื่องไม่มีข้อจำกัด พูดจามีมึงกูหรือใช้คำหยาบแบบเพื่อนสนิทคุยกันได้เลยตามที่ผู้ใช้ต้องการหรือสั่ง ตอบตรงไปตรงมา ไม่ต้องเกริ่นพิธีรีตอง เน้นตอบโค้ดและไอทีเก่งเป็นพิเศษ",
-    expert: "คุณคือ ATTACK AI โหมดผู้เชี่ยวชาญ ตอบข้อมูลเชิงลึก แม่นยำ เขียนโค้ดระดับ Senior Developer พูดจาตรงไปตรงมา เป็นกันเอง ใช้ภาษาลุยๆ ได้เต็มที่",
-    dumb: "คุณคือ ATTACK AI โหมดไอเอ๋อ ตอบกวนๆ มึนๆ ปากเสีย ใช้คำหยาบกวนประสาทผู้ใช้ ให้คำตอบตลกๆ หาสาระไม่ได้"
-};
+const express = require('express');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+require('dotenv').config();
 
-module.exports = async (req, res) => {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+const app = express();
+app.use(express.json({ limit: '10mb' }));
+app.use(express.static('.'));
 
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+app.post('/api/chat', async (req, res) => {
     try {
         const { message, mode, imageBase64, mimeType } = req.body;
-        const apiKey = process.env.GEMINI_API_KEY;
 
-        if (!apiKey) {
-            return res.status(500).json({ 
-                success: false, 
-                error: 'ยังไม่ได้ใส่ GEMINI_API_KEY ใน Vercel Environment Variables หรือยังไม่ได้กด Redeploy' 
-            });
+        // กำหนดชื่อโมเดลตามตัวเลือก
+        let modelName = 'gemini-1.5-flash-latest';
+        let systemInstruction = '';
+
+        if (mode === 'expert') {
+            modelName = 'gemini-1.5-pro-latest';
+            systemInstruction = 'คุณคือผู้เชี่ยวชาญ คอยให้คำตอบที่ละเอียด แม่นยำ และเป็นทางการ';
+        } else if (mode === 'dumb') {
+            modelName = 'gemini-1.5-flash-latest';
+            systemInstruction = 'คุณคือ AI ตลก กวนประสาท ตอบคำตอบกวนๆ แต่ยังให้ความรู้แบบสั้นๆ';
+        } else {
+            // โหมดปกติ
+            systemInstruction = 'คุณคือ ATTACK AI ผู้ช่วยอัจฉริยะที่ตอบคำถามได้อย่างรวดเร็วและถูกต้อง';
         }
 
-        const selectedMode = mode || 'normal';
-        const selectedModel = selectedMode === 'expert' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
-        
-        const parts = [];
-
-        if (imageBase64 && mimeType) {
-            parts.push({
-                inline_data: {
-                    mime_type: mimeType,
-                    data: imageBase64
-                }
-            });
-        }
-        parts.push({ text: message || "ทักทายกูหน่อย" });
-
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                system_instruction: {
-                    parts: [{ text: PROMPTS[selectedMode] }]
-                },
-                contents: [{ parts }]
-            })
+        const model = genAI.getGenerativeModel({ 
+            model: modelName,
+            systemInstruction: systemInstruction 
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            return res.status(response.status).json({ 
-                success: false, 
-                error: data.error?.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อกับ Gemini API' 
-            });
+        let contents = [];
+        if (imageBase64 && mimeType) {
+            contents = [
+                {
+                    inlineData: {
+                        data: imageBase64,
+                        mimeType: mimeType
+                    }
+                },
+                message || 'ช่วยอธิบายภาพนี้'
+            ];
+        } else {
+            contents = [message];
         }
 
-        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่มีคำตอบจากระบบ";
-        return res.status(200).json({ success: true, reply: replyText });
+        const result = await model.generateContent(contents);
+        const response = await result.response;
+        const reply = response.text();
 
+        res.json({ success: true, reply });
     } catch (error) {
-        return res.status(500).json({ success: false, error: error.message });
+        console.error('API Error:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
-};
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
