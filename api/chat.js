@@ -31,7 +31,8 @@ module.exports = async (req, res) => {
         }
         parts.push({ text: message || "ทักทายกูหน่อย" });
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        // แก้ไขชื่อโมเดลตรงนี้เป็น gemini-2.0-flash
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
