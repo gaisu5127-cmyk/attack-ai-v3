@@ -14,8 +14,9 @@ module.exports = async (req, res) => {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const selectedMode = mode || 'normal';
         
+        // แก้ไขชื่อโมเดลเป็น gemini-1.5-flash-latest
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
+            model: "gemini-1.5-flash-latest",
             systemInstruction: PROMPTS[selectedMode]
         });
 
