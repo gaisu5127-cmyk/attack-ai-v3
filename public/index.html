@@ -2,13 +2,13 @@
 <html lang="th" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ATTACK AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -20,85 +20,136 @@
 </head>
 <body class="bg-[#121110] text-[#E1DED7] h-screen flex overflow-hidden antialiased">
 
-    <!-- Sidebar -->
-    <aside id="sidebar" class="w-64 bg-[#181716] border-r border-[#2A2826] flex flex-col justify-between transition-all duration-300 z-20 absolute md:relative h-full -translate-x-full md:translate-x-0">
-        <div class="p-4 space-y-4">
-            <button onclick="createNewChat()" class="w-full py-2.5 px-4 bg-[#262422] hover:bg-[#302D2A] text-[#ECE9E3] font-medium text-sm rounded-xl border border-[#383532] flex items-center justify-center gap-2 transition shadow">
-                + New Chat
-            </button>
+    <!-- Overlay สำหรับมือถือเวลาเปิด Sidebar -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-20 hidden md:hidden"></div>
 
-            <div class="space-y-1">
-                <p class="text-xs font-semibold text-[#737068] px-2 uppercase tracking-wider">History</p>
-                <div id="chatHistoryList" class="space-y-1 max-h-[65vh] overflow-y-auto no-scrollbar">
+    <!-- Sidebar (โคลน Claude AI 1:1 ธีมดำ) -->
+    <aside id="sidebar" class="w-72 bg-[#181716] border-r border-[#2A2826] flex flex-col justify-between transition-transform duration-300 z-30 fixed md:relative h-full -translate-x-full md:translate-x-0">
+        <div class="p-5 space-y-6 overflow-y-auto no-scrollbar flex-1">
+            <!-- Header Logo -->
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-serif text-[#ECE9E3] tracking-tight">ATTACK AI</h1>
+                <button onclick="toggleSidebar()" class="md:hidden text-[#9E9B93] hover:text-white">✕</button>
+            </div>
+
+            <!-- Menu Links -->
+            <nav class="space-y-3 font-medium text-sm text-[#C2BFB7]">
+                <a href="#" class="flex items-center gap-3 py-1.5 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                    Chats
+                </a>
+                <a href="#" class="flex items-center gap-3 py-1.5 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9 6 9-6M3 7l9-6 9 6"/></svg>
+                    Projects
+                </a>
+                <a href="#" class="flex items-center gap-3 py-1.5 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.6 15.11a2 2 0 00-2.185 1.488l-.5 1.5a2 2 0 001.371 2.511l13.5 3a2 2 0 002.511-1.371l1.5-4.5a2 2 0 00-.369-1.81z"/></svg>
+                    Artifacts
+                </a>
+                <a href="#" class="flex items-center gap-3 py-1.5 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                    Code
+                </a>
+            </nav>
+
+            <!-- Recents (ประวัติการคุย) -->
+            <div class="space-y-2 pt-2">
+                <p class="text-xs font-semibold text-[#737068]">Recents</p>
+                <div id="chatHistoryList" class="space-y-1">
+                    <!-- ประวัติแชตจะดึงมาใส่ตรงนี้ -->
                 </div>
             </div>
         </div>
 
-        <div class="p-4 border-t border-[#2A2826] bg-[#141312]">
-            <div id="userInfo" class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-[#D97757] flex items-center justify-center font-bold text-black text-xs" id="userAvatar">U</div>
-                    <div>
-                        <p class="text-xs font-semibold text-white" id="userName">User_Guest</p>
-                        <p class="text-[10px] text-[#737068]" id="userStatus">Account</p>
-                    </div>
+        <!-- Bottom User Bar + New Chat Button -->
+        <div class="p-4 space-y-3 bg-[#141312] border-t border-[#2A2826]">
+            <button onclick="createNewChat()" class="w-full py-2.5 bg-[#262422] hover:bg-[#302D2A] text-[#ECE9E3] font-medium text-sm rounded-full border border-[#383532] flex items-center justify-center gap-2 transition shadow-lg">
+                <span class="text-base font-light">+</span> New chat
+            </button>
+
+            <div id="userInfo" class="flex items-center justify-between pt-1">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-[#D97757] flex items-center justify-center font-bold text-black text-xs" id="userAvatar">U</div>
+                    <span class="text-xs font-medium text-[#ECE9E3]" id="userName">User_Guest</span>
                 </div>
-                <button onclick="toggleAuthModal()" class="text-xs text-[#D97757] hover:underline">Sign In</button>
+                <button onclick="toggleAuthModal()" class="text-xs text-[#D97757] hover:underline">Sign in</button>
             </div>
         </div>
     </aside>
 
-    <!-- Main Content -->
+    <!-- Main Content Area -->
     <div class="flex-1 flex flex-col h-full relative">
+        <!-- Top Navbar -->
         <header class="px-5 py-3 border-b border-[#2A2826] flex justify-between items-center bg-[#121110]">
-            <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="text-[#9E9B93] hover:text-white md:hidden">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-                <h1 class="font-bold text-lg text-[#ECE9E3] tracking-wide">ATTACK <span class="text-[#D97757]">AI</span></h1>
+            <button onclick="toggleSidebar()" class="text-[#9E9B93] hover:text-white md:hidden">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <div class="ml-auto text-[#9E9B93]">
+                <!-- โลโก้จุดเล็กไอคอน Claude -->
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
             </div>
-            
-            <select id="mode" class="bg-[#1C1B1A] text-[#E1DED7] text-xs font-medium px-3 py-1.5 rounded-lg border border-[#33302D] outline-none cursor-pointer">
-                <option value="normal">Normal Mode</option>
-                <option value="expert">Senior Dev Mode</option>
-                <option value="dumb">Raw Mode</option>
-            </select>
         </header>
 
-        <main id="chatBox" class="flex-1 px-4 py-6 overflow-y-auto no-scrollbar space-y-6 max-w-3xl mx-auto w-full">
-            <div id="welcomeScreen" class="text-center space-y-3 my-auto py-20">
-                <h2 class="text-2xl font-bold text-[#ECE9E3]">ATTACK AI</h2>
-                <p class="text-xs text-[#737068]">System ready. Enter your instruction below.</p>
+        <!-- Chat Box Output -->
+        <main id="chatBox" class="flex-1 px-4 overflow-y-auto no-scrollbar flex flex-col justify-center max-w-xl mx-auto w-full space-y-6 my-auto">
+            <div id="welcomeScreen" class="text-center space-y-3 py-10 my-auto">
+                <!-- โลโก้ดอกไม้ Claude สไตล์ ATTACK AI -->
+                <div class="inline-block text-[#D97757]">
+                    <svg class="w-10 h-10 animate-spin-slow" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L13.8 8.2L20 10L13.8 11.8L12 18L10.2 11.8L4 10L10.2 8.2L12 2Z"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-serif tracking-wide text-[#ECE9E3]" id="welcomeText">
+                    Welcome to ATTACK AI
+                </h2>
             </div>
         </main>
 
-        <footer class="p-4 bg-[#121110] max-w-3xl mx-auto w-full">
+        <!-- Footer Input Area -->
+        <footer class="p-4 bg-[#121110] max-w-xl mx-auto w-full space-y-3">
             <div class="bg-[#1C1B1A] border border-[#2A2826] rounded-2xl p-2.5 shadow-2xl space-y-2">
                 <form id="chatForm" class="flex items-center gap-2">
                     <input type="file" id="imageInput" accept="image/*" class="hidden">
-                    <button type="button" onclick="document.getElementById('imageInput').click()" class="w-9 h-9 flex items-center justify-center bg-[#262422] hover:bg-[#302D2A] text-[#E1DED7] rounded-full transition text-base">
+                    <button type="button" onclick="document.getElementById('imageInput').click()" class="w-9 h-9 flex items-center justify-center bg-[#262422] hover:bg-[#302D2A] text-[#E1DED7] rounded-full transition text-lg font-light">
                         +
                     </button>
 
-                    <input type="text" id="userInput" placeholder="Message ATTACK AI..." class="flex-1 bg-transparent text-sm text-[#ECE9E3] outline-none placeholder-[#737068] px-2">
+                    <div class="relative flex-1">
+                        <select id="mode" class="w-full appearance-none bg-[#262422] text-[#E1DED7] text-xs font-medium px-3 py-2 rounded-full border border-[#33302D] outline-none cursor-pointer pr-6">
+                            <option value="normal">ATTACK 1.5 Medium</option>
+                            <option value="expert">ATTACK 1.5 Pro Expert</option>
+                            <option value="dumb">ATTACK 1.5 Raw</option>
+                        </select>
+                    </div>
 
-                    <button type="submit" class="w-9 h-9 flex items-center justify-center bg-[#D97757] text-black font-bold hover:opacity-90 rounded-full transition">
-                        &rarr;
+                    <button type="submit" class="w-9 h-9 flex items-center justify-center bg-[#ECE9E3] text-[#121110] hover:opacity-90 rounded-full transition">
+                        ↑
                     </button>
                 </form>
+
+                <div class="px-1 pt-1">
+                    <input type="text" id="userInput" placeholder="Chat with ATTACK AI..." class="w-full bg-transparent text-sm text-[#ECE9E3] outline-none placeholder-[#737068]">
+                </div>
             </div>
         </footer>
     </div>
 
-    <!-- Auth Modal -->
-    <div id="authModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <!-- Modal เข้าสู่ระบบ (ชื่อผู้ใช้ + รหัสผ่าน) -->
+    <div id="authModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
         <div class="bg-[#1C1B1A] border border-[#33302D] p-6 rounded-2xl max-w-sm w-full space-y-4 shadow-2xl">
-            <h3 class="text-lg font-bold text-white text-center">Sign In</h3>
-            <div class="space-y-3">
-                <input type="text" id="authName" placeholder="Username" class="w-full bg-[#121110] border border-[#33302D] p-2.5 rounded-xl text-sm text-white outline-none">
-                <button onclick="loginUser()" class="w-full py-2.5 bg-[#D97757] text-black font-bold text-sm rounded-xl hover:opacity-90 transition">Save User</button>
-                <button onclick="toggleAuthModal()" class="w-full py-2 bg-transparent text-[#737068] text-xs hover:text-white">Cancel</button>
-            </div>
+            <h3 class="text-xl font-bold text-white text-center">Sign In to ATTACK AI</h3>
+            <form onsubmit="handleLogin(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs text-[#9E9B93]">Username</label>
+                    <input type="text" id="loginUser" required placeholder="Enter username" class="w-full bg-[#121110] border border-[#33302D] p-2.5 rounded-xl text-sm text-white outline-none mt-1">
+                </div>
+                <div>
+                    <label class="text-xs text-[#9E9B93]">Password</label>
+                    <input type="password" id="loginPass" required placeholder="Enter password" class="w-full bg-[#121110] border border-[#33302D] p-2.5 rounded-xl text-sm text-white outline-none mt-1">
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-[#D97757] text-black font-bold text-sm rounded-xl hover:opacity-90 transition mt-2">Sign In</button>
+                <button type="button" onclick="toggleAuthModal()" class="w-full py-2 bg-transparent text-[#737068] text-xs hover:text-white">Cancel</button>
+            </form>
         </div>
     </div>
 
@@ -110,27 +161,38 @@
             highlight: function(code) { return hljs.highlightAuto(code).value; }
         });
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebarOverlay').classList.toggle('hidden');
+        }
+
         function toggleAuthModal() { 
             const modal = document.getElementById('authModal');
             modal.classList.toggle('hidden');
             modal.classList.toggle('flex');
         }
 
-        function loginUser() {
-            const name = document.getElementById('authName').value || 'User_VIP';
-            document.getElementById('userName').innerText = name;
-            document.getElementById('userAvatar').innerText = name[0].toUpperCase();
-            document.getElementById('userStatus').innerText = 'Active';
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUser').value;
+            document.getElementById('userName').innerText = username;
+            document.getElementById('userAvatar').innerText = username[0].toUpperCase();
+            document.getElementById('welcomeText').innerText = `Welcome, ${username}`;
             toggleAuthModal();
         }
 
         function createNewChat() {
             currentChatId = Date.now();
-            document.getElementById('chatBox').innerHTML = `
-                <div id="welcomeScreen" class="text-center space-y-3 my-auto py-20">
-                    <h2 class="text-2xl font-bold text-[#ECE9E3]">ATTACK AI</h2>
-                    <p class="text-xs text-[#737068]">System ready. Enter your instruction below.</p>
+            const chatBox = document.getElementById('chatBox');
+            chatBox.classList.add('justify-center', 'my-auto');
+            chatBox.innerHTML = `
+                <div id="welcomeScreen" class="text-center space-y-3 py-10 my-auto">
+                    <div class="inline-block text-[#D97757]">
+                        <svg class="w-10 h-10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L13.8 8.2L20 10L13.8 11.8L12 18L10.2 11.8L4 10L10.2 8.2L12 2Z"/></svg>
+                    </div>
+                    <h2 class="text-3xl font-serif tracking-wide text-[#ECE9E3]">
+                        Welcome to ATTACK AI
+                    </h2>
                 </div>`;
             renderHistoryUI();
         }
@@ -154,7 +216,7 @@
         function saveHistory(firstUserMsg) {
             let chat = chatHistory.find(c => c.id === currentChatId);
             if (!chat) {
-                chat = { id: currentChatId, title: firstUserMsg.slice(0, 20) + '...' };
+                chat = { id: currentChatId, title: firstUserMsg.slice(0, 25) };
                 chatHistory.unshift(chat);
                 localStorage.setItem('attack_ai_history', JSON.stringify(chatHistory));
             }
@@ -164,7 +226,7 @@
         function renderHistoryUI() {
             const list = document.getElementById('chatHistoryList');
             list.innerHTML = chatHistory.map(c => `
-                <div onclick="loadChat(${c.id})" class="p-2 text-xs rounded-lg hover:bg-[#262422] cursor-pointer text-[#E1DED7] truncate border border-transparent hover:border-[#383532]">
+                <div onclick="loadChat(${c.id})" class="p-2 text-sm rounded-lg hover:bg-[#262422] cursor-pointer text-[#C2BFB7] hover:text-white truncate transition">
                     ${c.title}
                 </div>
             `).join('');
@@ -179,13 +241,17 @@
             const welcomeScreen = document.getElementById('welcomeScreen');
 
             if (!input.value && !fileInput.files[0]) return;
-            if (welcomeScreen) welcomeScreen.remove();
+
+            if (welcomeScreen) {
+                welcomeScreen.remove();
+                chatBox.classList.remove('justify-center', 'my-auto');
+            }
 
             const userText = input.value;
             saveHistory(userText || 'Image Attachment');
 
             const userDiv = document.createElement('div');
-            userDiv.className = 'ml-auto bg-[#262422] text-[#ECE9E3] p-3.5 rounded-2xl max-w-[85%] text-sm border border-[#33302D] shadow';
+            userDiv.className = 'ml-auto bg-[#262422] text-[#ECE9E3] p-4 rounded-2xl max-w-[85%] text-sm border border-[#33302D] shadow';
             userDiv.innerText = userText || '[Image]';
             chatBox.appendChild(userDiv);
 
@@ -204,7 +270,7 @@
 
             const aiDiv = document.createElement('div');
             aiDiv.className = 'mr-auto text-[#ECE9E3] p-2 max-w-[90%] text-sm prose prose-invert';
-            aiDiv.innerHTML = '<span class="text-[#D97757] animate-pulse">Thinking...</span>';
+            aiDiv.innerHTML = '<span class="text-[#737068] animate-pulse">Thinking...</span>';
             chatBox.appendChild(aiDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
 
