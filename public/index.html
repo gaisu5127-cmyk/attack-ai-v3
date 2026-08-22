@@ -49,7 +49,7 @@
         </div>
     </div>
 
-    <!-- Modal ตั้งค่าโปรไฟล์และบัญชี (Profile Settings Modal) -->
+    <!-- Modal ตั้งค่าโปรไฟล์และบัญชี -->
     <div id="profileModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
         <div class="bg-[#181716] border border-[#2A2826] p-6 rounded-3xl max-w-sm w-full space-y-5 shadow-2xl text-left">
             <div class="flex justify-between items-center border-b border-[#2A2826] pb-3">
@@ -188,8 +188,14 @@
     </div>
 
     <script>
-        let chatHistory = JSON.parse(localStorage.getItem('attack_ai_history') || '[]');
-        let currentChatId = Date.now();
+        let chatHistory = [];
+        try {
+            chatHistory = JSON.parse(localStorage.getItem('attack_ai_history') || '[]');
+        } catch(e) {
+            chatHistory = [];
+        }
+
+        let currentChatId = String(Date.now());
         let lastUserMessage = '';
         let userAvatarData = localStorage.getItem('attack_ai_avatar') || '';
 
@@ -197,7 +203,6 @@
             highlight: function(code) { return hljs.highlightAuto(code).value; }
         });
 
-        // ตรวจสอบล็อกอินและข้อมูลโปรไฟล์ตอนเปิดเว็บ
         window.addEventListener('DOMContentLoaded', () => {
             const savedUser = localStorage.getItem('attack_ai_user');
             if (savedUser) {
@@ -279,7 +284,7 @@
         }
 
         function createNewChat() {
-            currentChatId = Date.now();
+            currentChatId = String(Date.now());
             const chatBox = document.getElementById('chatBox');
             chatBox.classList.add('justify-center', 'my-auto');
             chatBox.innerHTML = `
@@ -300,8 +305,8 @@
         }
 
         function loadChat(chatId) {
-            currentChatId = chatId;
-            const chat = chatHistory.find(c => c.id === chatId);
+            currentChatId = String(chatId);
+            const chat = chatHistory.find(c => String(c.id) === currentChatId);
             if (!chat) return;
 
             const chatBox = document.getElementById('chatBox');
@@ -330,6 +335,31 @@
             chatBox.scrollTop = chatBox.scrollHeight;
             renderHistoryUI();
             if (window.innerWidth < 768) toggleSidebar();
+        }
+
+        function renameChat(e, chatId) {
+            e.stopPropagation();
+            const chat = chatHistory.find(c => String(c.id) === String(chatId));
+            if (!chat) return;
+            const newTitle = prompt('ระบุชื่อแชทใหม่:', chat.title);
+            if (newTitle && newTitle.trim() !== '') {
+                chat.title = newTitle.trim();
+                localStorage.setItem('attack_ai_history', JSON.stringify(chatHistory));
+                renderHistoryUI();
+            }
+        }
+
+        function deleteChat(e, chatId) {
+            e.stopPropagation();
+            if (confirm('คุณต้องการลบแชทนี้หรือไม่?')) {
+                chatHistory = chatHistory.filter(c => String(c.id) !== String(chatId));
+                localStorage.setItem('attack_ai_history', JSON.stringify(chatHistory));
+                if (String(currentChatId) === String(chatId)) {
+                    createNewChat();
+                } else {
+                    renderHistoryUI();
+                }
+            }
         }
 
         function createActionToolbar(textToCopy) {
@@ -377,11 +407,12 @@
         }
 
         function saveMessageToHistory(sender, text) {
-            let chat = chatHistory.find(c => c.id === currentChatId);
+            let chat = chatHistory.find(c => String(c.id) === String(currentChatId));
             if (!chat) {
+                const cleanTitle = typeof text === 'string' ? text.trim().slice(0, 20) : 'New Chat';
                 chat = { 
-                    id: currentChatId, 
-                    title: text.slice(0, 25) || 'New Chat',
+                    id: String(currentChatId), 
+                    title: cleanTitle || 'New Chat',
                     messages: []
                 };
                 chatHistory.unshift(chat);
@@ -393,11 +424,25 @@
 
         function renderHistoryUI() {
             const list = document.getElementById('chatHistoryList');
-            list.innerHTML = chatHistory.map(c => `
-                <div onclick="loadChat(${c.id})" class="p-2 text-sm rounded-lg hover:bg-[#262422] cursor-pointer ${c.id === currentChatId ? 'bg-[#262422] text-white font-medium' : 'text-[#C2BFB7]'} hover:text-white truncate transition">
-                    ${c.title}
-                </div>
-            `).join('');
+            if (!list) return;
+
+            list.innerHTML = chatHistory.map(c => {
+                const isSelected = String(c.id) === String(currentChatId);
+                const titleStr = String(c.title || 'New Chat');
+                return `
+                    <div onclick="loadChat('${c.id}')" class="group flex items-center justify-between p-2 text-sm rounded-lg hover:bg-[#262422] cursor-pointer ${isSelected ? 'bg-[#262422] text-white font-medium' : 'text-[#C2BFB7]'} hover:text-white transition">
+                        <span class="truncate pr-2 flex-1">${titleStr}</span>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                            <button onclick="renameChat(event, '${c.id}')" title="ตั้งชื่อใหม่" class="p-1 hover:text-[#38BDF8]">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <button onclick="deleteChat(event, '${c.id}')" title="ลบห้อง" class="p-1 hover:text-red-400">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         document.getElementById('chatForm').addEventListener('submit', async (e) => {
