@@ -4,131 +4,176 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ATTACK AI</title>
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        claude: {
+                            bg: '#181816',
+                            sidebar: '#1E1E1C',
+                            border: '#2E2E2A',
+                            hover: '#2A2A26',
+                            card: '#22221F',
+                            accent: '#D97706', // โทนส้ม Amber
+                            accentHover: '#B45309',
+                            text: '#ECEBE4',
+                            subtext: '#8E8D8A'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <!-- Marked.js for Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Highlight.js for Code Highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        /* Custom Scrollbar สไตล์ Claude */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2E2E2A; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3E3E3A; }
+    </style>
 </head>
-<body class="bg-zinc-950 text-white font-sans antialiased h-screen flex flex-col overflow-hidden">
+<body class="bg-claude-bg text-claude-text font-sans antialiased h-screen flex flex-col overflow-hidden">
 
-    <!-- Auth Section (หน้าล็อกอิน) -->
-    <div id="authScreen" class="fixed inset-0 bg-zinc-950 z-50 flex items-center justify-center p-4">
-        <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-md">
-            <h1 class="text-2xl font-bold text-center mb-6 text-sky-400">ATTACK AI</h1>
+    <!-- Auth Screen (หน้าเข้าสู่ระบบ) -->
+    <div id="authScreen" class="fixed inset-0 bg-claude-bg z-50 flex items-center justify-center p-4">
+        <div class="bg-claude-sidebar border border-claude-border p-8 rounded-2xl w-full max-w-md shadow-2xl">
+            <div class="flex items-center justify-center gap-2 mb-6">
+                <span class="text-2xl font-bold text-claude-accent">▲</span>
+                <h1 class="text-2xl font-bold text-claude-text tracking-wider">ATTACK AI</h1>
+            </div>
             <form id="loginForm" class="space-y-4">
                 <div>
-                    <label class="block text-sm text-zinc-400 mb-1">ชื่อผู้ใช้</label>
-                    <input type="text" id="usernameInput" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-sky-500">
+                    <label class="block text-xs font-semibold text-claude-subtext mb-1 uppercase tracking-wider">ชื่อผู้ใช้</label>
+                    <input type="text" id="usernameInput" required class="w-full bg-claude-bg border border-claude-border rounded-xl p-3 text-claude-text focus:outline-none focus:border-claude-accent transition">
                 </div>
                 <div>
-                    <label class="block text-sm text-zinc-400 mb-1">รหัสผ่าน</label>
-                    <input type="password" id="passwordInput" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-sky-500">
+                    <label class="block text-xs font-semibold text-claude-subtext mb-1 uppercase tracking-wider">รหัสผ่าน</label>
+                    <input type="password" id="passwordInput" required class="w-full bg-claude-bg border border-claude-border rounded-xl p-3 text-claude-text focus:outline-none focus:border-claude-accent transition">
                 </div>
-                <button type="submit" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold p-2.5 rounded-lg transition-colors">เข้าสู่ระบบ</button>
+                <button type="submit" class="w-full bg-claude-accent hover:bg-claude-accentHover text-white font-medium p-3 rounded-xl transition shadow-lg mt-2">เข้าสู่ระบบ</button>
             </form>
         </div>
     </div>
 
-    <!-- Main App Container -->
+    <!-- Main Container -->
     <div class="flex h-full relative">
         <!-- Sidebar Backdrop (Mobile) -->
-        <div id="sidebarBackdrop" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden"></div>
+        <div id="sidebarBackdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 hidden md:hidden"></div>
 
-        <!-- Sidebar (แถบข้าง) -->
-        <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-zinc-900 border-r border-zinc-800 z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-200 flex flex-col justify-between">
+        <!-- Sidebar (Claude Style) -->
+        <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-claude-sidebar border-r border-claude-border z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-200 flex flex-col justify-between">
             <div class="p-4 flex-1 flex flex-col overflow-hidden">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-bold text-sky-400">ATTACK AI</h2>
-                    <button id="closeSidebarBtn" class="md:hidden text-zinc-400 hover:text-white">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <!-- Header Sidebar -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-claude-accent text-xl font-bold">▲</span>
+                        <span class="font-bold tracking-wider text-claude-text">ATTACK AI</span>
+                    </div>
+                    <button id="closeSidebarBtn" class="md:hidden text-claude-subtext hover:text-claude-text p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
-                <!-- Recents List (ประวัติการแชท) -->
-                <div class="text-xs font-semibold text-zinc-500 uppercase mb-2">Recents</div>
-                <div id="recentsContainer" class="flex-1 overflow-y-auto space-y-1 pr-1">
-                    <!-- รายการประวัติแชทจะถูกสร้างด้วย JS ที่นี่ -->
-                </div>
-
-                <button id="newChatBtn" class="mt-4 w-full border border-zinc-700 hover:bg-zinc-800 text-white py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition">
-                    <span>+ New chat</span>
+                <!-- New Chat Button -->
+                <button id="newChatBtn" class="w-full bg-claude-hover border border-claude-border hover:bg-claude-border text-claude-text py-2.5 px-4 rounded-xl flex items-center justify-start gap-3 transition mb-6 text-sm">
+                    <span class="text-claude-accent text-lg">+</span>
+                    <span>Start new chat</span>
                 </button>
+
+                <!-- Recents List Header -->
+                <div class="text-[11px] font-semibold text-claude-subtext uppercase tracking-wider mb-2 px-1">Recents</div>
+                
+                <!-- Recents Container -->
+                <div id="recentsContainer" class="flex-1 overflow-y-auto space-y-1 pr-1">
+                    <!-- รายการจะถูกแทรกที่นี่โดย JavaScript -->
+                </div>
             </div>
 
-            <!-- Profile Bottom Bar -->
-            <div class="p-4 border-t border-zinc-800 flex items-center justify-between">
-                <div id="openProfileBtn" class="flex items-center gap-3 cursor-pointer hover:opacity-80">
-                    <img id="userAvatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full object-cover">
-                    <span id="displayUsername" class="font-medium truncate max-w-[100px]">User</span>
+            <!-- User Profile Bottom Bar -->
+            <div class="p-4 border-t border-claude-border flex items-center justify-between bg-claude-sidebar">
+                <div id="openProfileBtn" class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition flex-1 min-w-0 pr-2">
+                    <img id="userAvatar" src="https://via.placeholder.com/40" class="w-8 h-8 rounded-full object-cover border border-claude-border">
+                    <span id="displayUsername" class="font-medium text-sm truncate text-claude-text">User</span>
                 </div>
-                <button id="logoutBtn" class="text-xs text-zinc-400 hover:text-red-400">Logout</button>
+                <button id="logoutBtn" class="text-xs text-claude-subtext hover:text-red-400 transition">Logout</button>
             </div>
         </aside>
 
-        <!-- Main Content (ส่วนแชทหลัก) -->
-        <main class="flex-1 flex flex-col h-full bg-zinc-950 min-w-0">
-            <!-- Header (Mobile Top Bar) -->
-            <header class="md:hidden border-b border-zinc-800 p-4 flex items-center justify-between">
-                <button id="openSidebarBtn" class="text-zinc-400 hover:text-white">
+        <!-- Main Chat Area -->
+        <main class="flex-1 flex flex-col h-full bg-claude-bg min-w-0">
+            <!-- Mobile Header -->
+            <header class="md:hidden border-b border-claude-border p-4 flex items-center justify-between bg-claude-sidebar">
+                <button id="openSidebarBtn" class="text-claude-subtext hover:text-claude-text">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
-                <h1 class="text-lg font-bold text-sky-400">ATTACK AI</h1>
+                <div class="flex items-center gap-2">
+                    <span class="text-claude-accent font-bold">▲</span>
+                    <span class="font-bold text-claude-text">ATTACK AI</span>
+                </div>
                 <div class="w-6"></div>
             </header>
 
-            <!-- Chat Area (พื้นที่แสดงข้อความ) -->
-            <div id="chatContainer" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto">
-                <div id="emptyState" class="h-full flex items-center justify-center text-zinc-600">
-                    <p>เริ่มต้นพิมพ์ข้อความเพื่อสนทนากับ ATTACK AI</p>
+            <!-- Chat Messages Container -->
+            <div id="chatContainer" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 max-w-3xl w-full mx-auto">
+                <div id="emptyState" class="h-full flex flex-col items-center justify-center text-claude-subtext text-center gap-3">
+                    <span class="text-claude-accent text-4xl">▲</span>
+                    <h2 class="text-xl font-medium text-claude-text">ยินดีต้อนรับสู่ ATTACK AI</h2>
+                    <p class="text-sm max-w-sm">เริ่มต้นสอบถาม เขียนโค้ด หรือให้ช่วยวิเคราะห์ข้อมูลได้ทันที</p>
                 </div>
             </div>
 
-            <!-- Input Form (กล่องพิมพ์ข้อความ) -->
-            <div class="p-4 border-t border-zinc-800/50">
-                <form id="chatForm" class="max-w-3xl mx-auto relative flex items-center">
-                    <input type="text" id="userInput" placeholder="ถามคำถามหรือสั่งงานที่นี่..." class="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-3 pl-4 pr-12 text-white focus:outline-none focus:border-sky-500">
-                    <button type="submit" id="sendBtn" class="absolute right-2 p-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl transition-colors flex items-center justify-center">
-                        <svg id="sendIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
-                        <!-- Loading Spinner -->
-                        <svg id="loadingSpinner" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </button>
+            <!-- Input Box Section -->
+            <div class="p-4 md:p-6 border-t border-claude-border/50 bg-claude-bg">
+                <form id="chatForm" class="max-w-3xl mx-auto relative">
+                    <div class="relative flex items-center bg-claude-card border border-claude-border rounded-2xl shadow-lg focus-within:border-claude-accent transition">
+                        <textarea id="userInput" rows="1" placeholder="Reply to ATTACK AI..." class="w-full bg-transparent py-3.5 pl-4 pr-12 text-claude-text placeholder-claude-subtext resize-none focus:outline-none max-h-32 text-sm leading-relaxed"></textarea>
+                        <button type="submit" id="sendBtn" class="absolute right-2.5 p-2 bg-claude-accent hover:bg-claude-accentHover text-white rounded-xl transition flex items-center justify-center">
+                            <svg id="sendIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                            <!-- Loading Spinner -->
+                            <svg id="loadingSpinner" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </form>
             </div>
         </main>
     </div>
 
     <!-- Profile Modal -->
-    <div id="profileModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-sm">
-            <h3 class="text-lg font-bold mb-4">แก้ไขโปรไฟล์</h3>
+    <div id="profileModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-claude-sidebar border border-claude-border p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+            <h3 class="text-lg font-semibold mb-4 text-claude-text">แก้ไขโปรไฟล์</h3>
             <div class="space-y-4">
-                <div class="flex flex-col items-center gap-2">
-                    <img id="modalAvatarPreview" src="https://via.placeholder.com/80" class="w-20 h-20 rounded-full object-cover border-2 border-sky-500">
-                    <input type="text" id="avatarUrlInput" placeholder="URL รูปโปรไฟล์" class="w-full text-xs bg-zinc-800 border border-zinc-700 rounded p-2 text-white">
+                <div class="flex flex-col items-center gap-3">
+                    <img id="modalAvatarPreview" src="https://via.placeholder.com/80" class="w-20 h-20 rounded-full object-cover border-2 border-claude-accent">
+                    <input type="text" id="avatarUrlInput" placeholder="URL รูปโปรไฟล์ (https://...)" class="w-full text-xs bg-claude-bg border border-claude-border rounded-xl p-2.5 text-claude-text focus:outline-none focus:border-claude-accent">
                 </div>
                 <div>
-                    <label class="block text-xs text-zinc-400 mb-1">ชื่อผู้ใช้</label>
-                    <input type="text" id="modalUsernameInput" class="w-full bg-zinc-800 border border-zinc-700 rounded p-2 text-white text-sm">
+                    <label class="block text-xs font-medium text-claude-subtext mb-1">ชื่อผู้ใช้</label>
+                    <input type="text" id="modalUsernameInput" class="w-full bg-claude-bg border border-claude-border rounded-xl p-2.5 text-claude-text text-sm focus:outline-none focus:border-claude-accent">
                 </div>
                 <div class="flex gap-2 pt-2">
-                    <button id="closeProfileBtn" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-2 rounded-lg text-sm">ยกเลิก</button>
-                    <button id="saveProfileBtn" class="flex-1 bg-sky-500 hover:bg-sky-600 text-white py-2 rounded-lg text-sm font-semibold">บันทึก</button>
+                    <button id="closeProfileBtn" class="flex-1 bg-claude-card hover:bg-claude-border text-claude-text py-2.5 rounded-xl text-sm transition">ยกเลิก</button>
+                    <button id="saveProfileBtn" class="flex-1 bg-claude-accent hover:bg-claude-accentHover text-white py-2.5 rounded-xl text-sm font-medium transition shadow">บันทึก</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Script Zone -->
+    <!-- JavaScript Logic -->
     <script>
-        // State
         let currentUser = null;
-        let chatHistory = {}; // Structure: { chatId: { title: "", messages: [{sender: "", text: ""}] } }
+        let chatHistory = {}; // { chatId: { id: "", title: "", messages: [{sender: "", text: ""}] } }
         let currentChatId = null;
 
         // Elements
@@ -161,7 +206,7 @@
         const modalAvatarPreview = document.getElementById('modalAvatarPreview');
         const modalUsernameInput = document.getElementById('modalUsernameInput');
 
-        // Init App
+        // Init
         window.addEventListener('DOMContentLoaded', () => {
             const savedUser = localStorage.getItem('attack_ai_user');
             if (savedUser) {
@@ -170,7 +215,7 @@
                 authScreen.classList.add('hidden');
             }
 
-            // Marked option setup
+            // Markdown Highlight Options
             marked.setOptions({
                 highlight: function(code, lang) {
                     if (lang && hljs.getLanguage(lang)) {
@@ -179,25 +224,26 @@
                     return hljs.highlightAuto(code).value;
                 }
             });
+
+            // Auto-resize Textarea
+            userInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
         });
 
-        // Login
+        // Auth
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const username = usernameInput.value.trim();
             if (!username) return;
 
-            currentUser = {
-                username: username,
-                avatar: 'https://via.placeholder.com/40'
-            };
-
+            currentUser = { username, avatar: 'https://via.placeholder.com/40' };
             localStorage.setItem('attack_ai_user', JSON.stringify(currentUser));
             initUserData();
             authScreen.classList.add('hidden');
         });
 
-        // Logout
         logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('attack_ai_user');
             location.reload();
@@ -207,22 +253,28 @@
             displayUsername.textContent = currentUser.username;
             userAvatar.src = currentUser.avatar || 'https://via.placeholder.com/40';
             
-            // Load Chat History
             const historyKey = `attack_ai_history_${currentUser.username}`;
             chatHistory = JSON.parse(localStorage.getItem(historyKey)) || {};
             renderRecents();
         }
 
-        // Render Recents Sidebar
+        // Render Recents List (Claude UI Style)
         function renderRecents() {
             recentsContainer.innerHTML = '';
-            const chatIds = Object.keys(chatHistory).reverse(); // ล่าสุดอยู่บน
+            const chatIds = Object.keys(chatHistory).reverse();
 
             chatIds.forEach(id => {
                 const item = chatHistory[id];
                 const btn = document.createElement('button');
-                btn.className = `w-full text-left px-3 py-2 rounded-xl text-sm truncate transition ${id === currentChatId ? 'bg-zinc-800 text-white font-medium' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'}`;
-                btn.textContent = item.title || 'แชทไม่มีชื่อ';
+                
+                // สไตล์ปุ่ม Recents ให้แมตช์กับ Claude UI
+                const isActive = id === currentChatId;
+                btn.className = `w-full text-left px-3 py-2 rounded-xl text-xs truncate transition block ${
+                    isActive 
+                        ? 'bg-claude-hover text-claude-text font-medium border border-claude-border' 
+                        : 'text-claude-subtext hover:bg-claude-hover/50 hover:text-claude-text'
+                }`;
+                btn.textContent = item.title || 'Untitled Chat';
                 
                 btn.addEventListener('click', () => {
                     loadChat(id);
@@ -233,7 +285,7 @@
             });
         }
 
-        // Load Single Chat
+        // Load Selected Chat History
         function loadChat(chatId) {
             currentChatId = chatId;
             renderRecents();
@@ -253,16 +305,18 @@
             scrollToBottom();
         }
 
-        // New Chat
+        // New Chat Button
         newChatBtn.addEventListener('click', () => {
             currentChatId = null;
             renderRecents();
             chatContainer.innerHTML = '';
             chatContainer.appendChild(emptyState);
+            userInput.value = '';
+            userInput.style.height = 'auto';
             closeSidebar();
         });
 
-        // Handle Send Message
+        // Submit Form (Send Msg)
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const text = userInput.value.trim();
@@ -271,26 +325,25 @@
             if (!currentChatId) {
                 currentChatId = 'chat_' + Date.now();
                 chatHistory[currentChatId] = {
-                    title: text.substring(0, 24),
+                    id: currentChatId,
+                    title: text.substring(0, 26) + (text.length > 26 ? '...' : ''),
                     messages: []
                 };
             }
 
-            // Remove empty state
             if (chatContainer.contains(emptyState)) {
                 chatContainer.removeChild(emptyState);
             }
 
-            // User Message
+            // Append User Msg
             appendMessageUI('user', text);
             saveMessage('user', text);
             userInput.value = '';
+            userInput.style.height = 'auto';
 
-            // Loading state
             setLoading(true);
 
             try {
-                // Fetch from Backend API
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -298,12 +351,12 @@
                 });
 
                 const data = await res.json();
-                const aiReply = data.reply || data.message || "เกิดข้อผิดพลาดจากเซิร์ฟเวอร์";
+                const aiReply = data.reply || data.message || "เกิดข้อผิดพลาดจากระบบเซิร์ฟเวอร์";
 
                 appendMessageUI('ai', aiReply);
                 saveMessage('ai', aiReply);
             } catch (err) {
-                const errorMsg = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้";
+                const errorMsg = "ไม่สามารถติดต่อกับเซิร์ฟเวอร์ได้";
                 appendMessageUI('ai', errorMsg);
                 saveMessage('ai', errorMsg);
             } finally {
@@ -318,19 +371,23 @@
             renderRecents();
         }
 
+        // Display Message UI (Claude Style)
         function appendMessageUI(sender, text) {
             const isUser = sender === 'user';
             const wrapper = document.createElement('div');
             wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`;
 
             const box = document.createElement('div');
-            box.className = `max-w-[85%] rounded-2xl p-4 ${isUser ? 'bg-sky-600 text-white rounded-br-none' : 'bg-zinc-900 border border-zinc-800 text-zinc-100 rounded-bl-none'}`;
+            box.className = `max-w-[88%] text-sm leading-relaxed p-4 rounded-2xl ${
+                isUser 
+                    ? 'bg-claude-card border border-claude-border text-claude-text rounded-tr-none' 
+                    : 'bg-transparent text-claude-text pl-0'
+            }`;
 
             if (isUser) {
                 box.textContent = text;
             } else {
                 box.innerHTML = marked.parse(text);
-                // Highlight code blocks
                 box.querySelectorAll('pre code').forEach((el) => {
                     hljs.highlightElement(el);
                 });
@@ -355,7 +412,7 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // Sidebar Control (Mobile)
+        // Sidebar Control
         openSidebarBtn?.addEventListener('click', () => {
             sidebar.classList.remove('-translate-x-full');
             sidebarBackdrop.classList.remove('hidden');
@@ -369,7 +426,7 @@
         closeSidebarBtn?.addEventListener('click', closeSidebar);
         sidebarBackdrop?.addEventListener('click', closeSidebar);
 
-        // Profile Modal Control
+        // Profile Modal
         openProfileBtn.addEventListener('click', () => {
             modalUsernameInput.value = currentUser.username;
             avatarUrlInput.value = currentUser.avatar || '';
