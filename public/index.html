@@ -1,3 +1,57 @@
+import express from 'express';
+import dotenv from 'dotenv';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+dotenv.config();
+
+const app = express();
+app.use(express.json({ limit: '10mb' }));
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'YOUR_API_KEY');
+
+// API Endpoint สำหรับประมวลผล Gemini
+app.post('/api/chat', async (req, res) => {
+    try {
+        const { message, mode, imageBase64, mimeType } = req.body;
+
+        // สลับใช้โมเดลเวอร์ชัน 1.5 ที่โควตากว้างและคุยได้ยาว
+        const selectedModel = mode === 'expert' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
+        const model = genAI.getGenerativeModel({ model: selectedModel });
+
+        let promptParts = [];
+        if (message) promptParts.push(message);
+
+        if (imageBase64 && mimeType) {
+            promptParts.push({
+                inlineData: {
+                    data: imageBase64,
+                    mimeType: mimeType
+                }
+            });
+        }
+
+        const result = await model.generateContent(promptParts);
+        const response = await result.response;
+        
+        res.json({ success: true, reply: response.text() });
+
+    } catch (error) {
+        console.error("Gemini API Error:", error);
+
+        if (error.status === 429 || error.message?.includes('Quota exceeded')) {
+            return res.status(429).json({ 
+                success: false, 
+                error: "ใช้งานเกินโควตาชั่วคราว กรุณาเว้นระยะห่าง 5-10 วินาทีแล้วส่งอีกครั้ง" 
+            });
+        }
+
+        res.status(500).json({ success: false, error: "เกิดข้อผิดพลาดในการเชื่อมต่อกับ Gemini API" });
+    }
+});
+
+// ส่งหน้าเว็บ HTML (UI เดิม 100%)
+app.get('/', (req, res) => {
+    res.send(`
 <!DOCTYPE html>
 <html lang="th" class="dark">
 <head>
@@ -121,7 +175,6 @@
             </div>
         </div>
 
-        <!-- Bottom User Bar -->
         <div class="p-4 space-y-3 bg-[#141312] border-t border-[#2A2826]">
             <button onclick="createNewChat()" class="w-full py-2.5 bg-[#262422] hover:bg-[#302D2A] text-[#ECE9E3] font-medium text-sm rounded-full border border-[#383532] flex items-center justify-center gap-2 transition shadow-lg">
                 <span class="text-base font-light">+</span> New chat
@@ -215,15 +268,15 @@
         function setUserData(username, avatar) {
             document.getElementById('userName').innerText = username;
             document.getElementById('editUserName').value = username;
-            document.getElementById('welcomeText').innerText = `Welcome, ${username}`;
+            document.getElementById('welcomeText').innerText = \`Welcome, \${username}\`;
             
             const avatarEl = document.getElementById('userAvatar');
             const modalAvatarEl = document.getElementById('profileModalAvatar');
 
             if (avatar) {
-                avatarEl.style.backgroundImage = `url(${avatar})`;
+                avatarEl.style.backgroundImage = \`url(\${avatar})\`;
                 avatarEl.innerText = '';
-                modalAvatarEl.style.backgroundImage = `url(${avatar})`;
+                modalAvatarEl.style.backgroundImage = \`url(\${avatar})\`;
                 modalAvatarEl.innerText = '';
             } else {
                 avatarEl.style.backgroundImage = 'none';
@@ -287,7 +340,7 @@
             currentChatId = String(Date.now());
             const chatBox = document.getElementById('chatBox');
             chatBox.classList.add('justify-center', 'my-auto');
-            chatBox.innerHTML = `
+            chatBox.innerHTML = \`
                 <div id="welcomeScreen" class="text-center space-y-4 py-10 my-auto">
                     <div class="flex justify-center">
                         <svg class="w-16 h-16 text-white" viewBox="0 0 200 200" fill="none">
@@ -299,7 +352,7 @@
                     <h2 class="text-3xl font-bold tracking-wider text-[#ECE9E3]">
                         Welcome to ATTACK AI
                     </h2>
-                </div>`;
+                </div>\`;
             renderHistoryUI();
             if (window.innerWidth < 768) toggleSidebar();
         }
@@ -363,15 +416,15 @@
         }
 
         function createActionToolbar(textToCopy) {
-            return `
+            return \`
             <div class="flex items-center gap-3 pt-3 text-[#8E8B82]">
-                <button onclick="copyToClipboard('${encodeURIComponent(textToCopy)}')" title="Copy" class="hover:text-white transition">
+                <button onclick="copyToClipboard('\${encodeURIComponent(textToCopy)}')" title="Copy" class="hover:text-white transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                 </button>
                 <button onclick="shareResponse()" title="Share" class="hover:text-white transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                 </button>
-                <button onclick="speakText('${encodeURIComponent(textToCopy)}')" title="Read aloud" class="hover:text-white transition">
+                <button onclick="speakText('\${encodeURIComponent(textToCopy)}')" title="Read aloud" class="hover:text-white transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </button>
                 <button onclick="this.classList.toggle('text-white')" title="Good response" class="hover:text-white transition">
@@ -383,7 +436,7 @@
                 <button onclick="retryLastMessage()" title="Retry response" class="hover:text-white transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 </button>
-            </div>`;
+            </div>\`;
         }
 
         function copyToClipboard(encodedText) {
@@ -429,19 +482,19 @@
             list.innerHTML = chatHistory.map(c => {
                 const isSelected = String(c.id) === String(currentChatId);
                 const titleStr = String(c.title || 'New Chat');
-                return `
-                    <div onclick="loadChat('${c.id}')" class="group flex items-center justify-between p-2 text-sm rounded-lg hover:bg-[#262422] cursor-pointer ${isSelected ? 'bg-[#262422] text-white font-medium' : 'text-[#C2BFB7]'} hover:text-white transition">
-                        <span class="truncate pr-2 flex-1">${titleStr}</span>
+                return \`
+                    <div onclick="loadChat('\${c.id}')" class="group flex items-center justify-between p-2 text-sm rounded-lg hover:bg-[#262422] cursor-pointer \${isSelected ? 'bg-[#262422] text-white font-medium' : 'text-[#C2BFB7]'} hover:text-white transition">
+                        <span class="truncate pr-2 flex-1">\${titleStr}</span>
                         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-                            <button onclick="renameChat(event, '${c.id}')" title="ตั้งชื่อใหม่" class="p-1 hover:text-[#38BDF8]">
+                            <button onclick="renameChat(event, '\${c.id}')" title="ตั้งชื่อใหม่" class="p-1 hover:text-[#38BDF8]">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
-                            <button onclick="deleteChat(event, '${c.id}')" title="ลบห้อง" class="p-1 hover:text-red-400">
+                            <button onclick="deleteChat(event, '\${c.id}')" title="ลบห้อง" class="p-1 hover:text-red-400">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                         </div>
                     </div>
-                `;
+                \`;
             }).join('');
         }
 
@@ -488,14 +541,14 @@
             const aiTextDiv = document.createElement('div');
             aiTextDiv.className = 'prose prose-invert flex items-center gap-2';
             
-            aiTextDiv.innerHTML = `
+            aiTextDiv.innerHTML = \`
                 <div class="flex items-center gap-2 text-[#38BDF8]">
                     <svg class="animate-spin h-5 w-5 text-[#38BDF8]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     <span class="text-xs text-[#737068]">ATTACK AI กำลังคิด...</span>
-                </div>`;
+                </div>\`;
             
             aiContainer.appendChild(aiTextDiv);
             chatBox.appendChild(aiContainer);
@@ -527,3 +580,8 @@
     </script>
 </body>
 </html>
+    `);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
