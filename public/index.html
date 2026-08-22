@@ -163,10 +163,10 @@
         </main>
 
         <footer class="p-4 bg-[#121110] max-w-xl mx-auto w-full space-y-3">
-            <div class="bg-[#1C1B1A] border border-[#2A2826] rounded-2xl p-2.5 shadow-2xl space-y-2">
-                <form id="chatForm" class="flex items-center gap-2">
+            <form id="chatForm" class="bg-[#1C1B1A] border border-[#2A2826] rounded-2xl p-2.5 shadow-2xl space-y-2">
+                <div class="flex items-center gap-2">
                     <input type="file" id="imageInput" accept="image/*" class="hidden">
-                    <button type="button" onclick="document.getElementById('imageInput').click()" class="w-9 h-9 flex items-center justify-center bg-[#262422] hover:bg-[#302D2A] text-[#E1DED7] rounded-full transition text-lg font-light">
+                    <button type="button" onclick="document.getElementById('imageInput').click()" class="w-9 h-9 flex items-center justify-center bg-[#262422] hover:bg-[#302D2A] text-[#E1DED7] rounded-full transition text-lg font-light shrink-0">
                         +
                     </button>
                     <div class="relative flex-1">
@@ -176,14 +176,14 @@
                             <option value="dumb">โหมดไอเอ๋อ (กวนๆ)</option>
                         </select>
                     </div>
-                    <button type="submit" class="w-9 h-9 flex items-center justify-center bg-[#ECE9E3] text-[#121110] hover:opacity-90 rounded-full transition">
+                    <button type="submit" class="w-9 h-9 flex items-center justify-center bg-[#ECE9E3] text-[#121110] hover:opacity-90 rounded-full transition shrink-0">
                         ↑
                     </button>
-                </form>
+                </div>
                 <div class="px-1 pt-1">
                     <input type="text" id="userInput" placeholder="Chat with ATTACK AI..." class="w-full bg-transparent text-sm text-[#ECE9E3] outline-none placeholder-[#737068]">
                 </div>
-            </div>
+            </form>
         </footer>
     </div>
 
@@ -470,14 +470,16 @@
             const chatBox = document.getElementById('chatBox');
             const welcomeScreen = document.getElementById('welcomeScreen');
 
-            if (!input.value && !fileInput.files[0]) return;
+            const userText = input.value.trim();
+            const hasFile = fileInput.files && fileInput.files[0];
+
+            if (!userText && !hasFile) return;
 
             if (welcomeScreen) {
                 welcomeScreen.remove();
                 chatBox.classList.remove('justify-center', 'my-auto');
             }
 
-            const userText = input.value;
             lastUserMessage = userText;
             saveMessageToHistory('user', userText || '[Image]');
 
@@ -487,7 +489,7 @@
             chatBox.appendChild(userDiv);
 
             let imageBase64 = null, mimeType = null;
-            if (fileInput.files[0]) {
+            if (hasFile) {
                 const file = fileInput.files[0];
                 mimeType = file.type;
                 imageBase64 = await new Promise(res => {
@@ -497,14 +499,14 @@
                 });
             }
 
-            input.value = ''; fileInput.value = '';
+            input.value = ''; 
+            fileInput.value = '';
 
             const aiContainer = document.createElement('div');
             aiContainer.className = 'mr-auto text-[#ECE9E3] p-2 max-w-[90%] text-sm space-y-2';
             
             const aiTextDiv = document.createElement('div');
-            aiTextDiv.className = 'prose prose-invert flex items-center gap-2';
-            
+            aiTextDiv.className = 'prose prose-invert';
             aiTextDiv.innerHTML = `
                 <div class="flex items-center gap-2 text-[#38BDF8]">
                     <svg class="animate-spin h-5 w-5 text-[#38BDF8]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -524,18 +526,22 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: userText, mode, imageBase64, mimeType })
                 });
+
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
                 const data = await res.json();
                 
-                if (data.success) {
-                    aiTextDiv.innerHTML = marked.parse(data.reply);
-                    aiContainer.innerHTML += createActionToolbar(data.reply);
-                    saveMessageToHistory('ai', data.reply);
+                if (data && (data.reply || data.success)) {
+                    const replyText = data.reply || data.response || "ไม่มีการตอบกลับจากระบบ";
+                    aiTextDiv.innerHTML = marked.parse(replyText);
+                    aiContainer.appendChild(document.createRange().createContextualFragment(createActionToolbar(replyText)));
+                    saveMessageToHistory('ai', replyText);
                     hljs.highlightAll();
                 } else {
-                    aiTextDiv.innerText = "Error: " + data.error;
+                    aiTextDiv.innerText = "Error: " + (data.error || "เกิดข้อผิดพลาดในการรับข้อมูล");
                 }
             } catch (err) {
-                aiTextDiv.innerText = "Connection Error";
+                aiTextDiv.innerText = "Connection Error: ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้";
             }
             chatBox.scrollTop = chatBox.scrollHeight;
         });
